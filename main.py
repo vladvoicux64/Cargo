@@ -2,6 +2,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -31,7 +34,7 @@ class Ui_MainWindow(object):
         self.toolButton.setGeometry(QtCore.QRect(490, 30, 71, 19))
         self.toolButton.setObjectName("toolButton")
         self.pushButton = QtWidgets.QPushButton(self.Upload)
-        self.pushButton.setGeometry(QtCore.QRect(30, 110, 531, 101))
+        self.pushButton.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.pushButton.setObjectName("pushButton")
         self.tabWidget.addTab(self.Upload, "")
         self.Download = QtWidgets.QWidget()
@@ -52,7 +55,7 @@ class Ui_MainWindow(object):
         self.toolButton_2.setGeometry(QtCore.QRect(490, 70, 71, 20))
         self.toolButton_2.setObjectName("toolButton_2")
         self.pushButton_2 = QtWidgets.QPushButton(self.Download)
-        self.pushButton_2.setGeometry(QtCore.QRect(30, 110, 531, 101))
+        self.pushButton_2.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.pushButton_2.setObjectName("pushButton_2")
         self.tabWidget.addTab(self.Download, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -74,13 +77,14 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "File to upload:"))
         self.label_2.setText(_translate("MainWindow", "Container ID:"))
         self.toolButton.setText(_translate("MainWindow", "Browse"))
-        self.pushButton.setText(_translate("MainWindow", "Download"))
+        self.pushButton.setText(_translate("MainWindow", "Upload"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Upload), _translate("MainWindow", "Upload"))
         self.label_3.setText(_translate("MainWindow", "Container ID:"))
         self.label_4.setText(_translate("MainWindow", "Download path:"))
         self.toolButton_2.setText(_translate("MainWindow", "Browse"))
-        self.pushButton_2.setText(_translate("MainWindow", "Upload"))
+        self.pushButton_2.setText(_translate("MainWindow", "Download"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Download), _translate("MainWindow", "Download"))
+
 
 app = QApplication(sys.argv)
 MainWindow = QMainWindow()
