@@ -1,11 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
 import sys
 
-from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_MainWindow(object):
+class Ui_MainWindow(QWidget):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(600, 300)
@@ -24,39 +23,39 @@ class Ui_MainWindow(object):
         self.label_2 = QtWidgets.QLabel(self.Upload)
         self.label_2.setGeometry(QtCore.QRect(30, 60, 71, 31))
         self.label_2.setObjectName("label_2")
-        self.lineEdit = QtWidgets.QLineEdit(self.Upload)
-        self.lineEdit.setGeometry(QtCore.QRect(100, 70, 461, 20))
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit_2 = QtWidgets.QLineEdit(self.Upload)
-        self.lineEdit_2.setGeometry(QtCore.QRect(100, 30, 391, 20))
-        self.lineEdit_2.setObjectName("lineEdit_2")
-        self.toolButton = QtWidgets.QToolButton(self.Upload)
-        self.toolButton.setGeometry(QtCore.QRect(490, 30, 71, 19))
-        self.toolButton.setObjectName("toolButton")
-        self.pushButton = QtWidgets.QPushButton(self.Upload)
-        self.pushButton.setGeometry(QtCore.QRect(30, 120, 531, 101))
-        self.pushButton.setObjectName("pushButton")
+        self.uploadcontID = QtWidgets.QLineEdit(self.Upload)
+        self.uploadcontID.setGeometry(QtCore.QRect(100, 70, 461, 20))
+        self.uploadcontID.setObjectName("uploadcontID")
+        self.uploadLocation = QtWidgets.QLineEdit(self.Upload)
+        self.uploadLocation.setGeometry(QtCore.QRect(100, 30, 391, 20))
+        self.uploadLocation.setObjectName("uploadLocation")
+        self.browseUpload = QtWidgets.QToolButton(self.Upload)
+        self.browseUpload.setGeometry(QtCore.QRect(490, 30, 71, 19))
+        self.browseUpload.setObjectName("browseUpload")
+        self.upload = QtWidgets.QPushButton(self.Upload)
+        self.upload.setGeometry(QtCore.QRect(30, 120, 531, 101))
+        self.upload.setObjectName("upload")
         self.tabWidget.addTab(self.Upload, "")
         self.Download = QtWidgets.QWidget()
         self.Download.setObjectName("Download")
         self.label_3 = QtWidgets.QLabel(self.Download)
         self.label_3.setGeometry(QtCore.QRect(30, 20, 71, 31))
         self.label_3.setObjectName("label_3")
-        self.lineEdit_3 = QtWidgets.QLineEdit(self.Download)
-        self.lineEdit_3.setGeometry(QtCore.QRect(100, 30, 461, 20))
-        self.lineEdit_3.setObjectName("lineEdit_3")
+        self.downloadcontID = QtWidgets.QLineEdit(self.Download)
+        self.downloadcontID.setGeometry(QtCore.QRect(100, 30, 461, 20))
+        self.downloadcontID.setObjectName("downloadcontID")
         self.label_4 = QtWidgets.QLabel(self.Download)
         self.label_4.setGeometry(QtCore.QRect(30, 60, 81, 31))
         self.label_4.setObjectName("label_4")
-        self.lineEdit_4 = QtWidgets.QLineEdit(self.Download)
-        self.lineEdit_4.setGeometry(QtCore.QRect(110, 70, 381, 20))
-        self.lineEdit_4.setObjectName("lineEdit_4")
-        self.toolButton_2 = QtWidgets.QToolButton(self.Download)
-        self.toolButton_2.setGeometry(QtCore.QRect(490, 70, 71, 20))
-        self.toolButton_2.setObjectName("toolButton_2")
-        self.pushButton_2 = QtWidgets.QPushButton(self.Download)
-        self.pushButton_2.setGeometry(QtCore.QRect(30, 120, 531, 101))
-        self.pushButton_2.setObjectName("pushButton_2")
+        self.downloadLocation = QtWidgets.QLineEdit(self.Download)
+        self.downloadLocation.setGeometry(QtCore.QRect(110, 70, 381, 20))
+        self.downloadLocation.setObjectName("downloadLocation")
+        self.browseDownload = QtWidgets.QToolButton(self.Download)
+        self.browseDownload.setGeometry(QtCore.QRect(490, 70, 71, 20))
+        self.browseDownload.setObjectName("browseDownload")
+        self.download = QtWidgets.QPushButton(self.Download)
+        self.download.setGeometry(QtCore.QRect(30, 120, 531, 101))
+        self.download.setObjectName("download")
         self.tabWidget.addTab(self.Download, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -68,22 +67,25 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Cargo"))
         self.label.setText(_translate("MainWindow", "File to upload:"))
         self.label_2.setText(_translate("MainWindow", "Container ID:"))
-        self.toolButton.setText(_translate("MainWindow", "Browse"))
-        self.pushButton.setText(_translate("MainWindow", "Upload"))
+        self.browseUpload.setText(_translate("MainWindow", "Browse"))
+        self.upload.setText(_translate("MainWindow", "Upload"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Upload), _translate("MainWindow", "Upload"))
         self.label_3.setText(_translate("MainWindow", "Container ID:"))
         self.label_4.setText(_translate("MainWindow", "Download path:"))
-        self.toolButton_2.setText(_translate("MainWindow", "Browse"))
-        self.pushButton_2.setText(_translate("MainWindow", "Download"))
+        self.browseDownload.setText(_translate("MainWindow", "Browse"))
+        self.download.setText(_translate("MainWindow", "Download"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Download), _translate("MainWindow", "Download"))
+
 
 
 app = QApplication(sys.argv)
