@@ -32,6 +32,7 @@ class Ui_MainWindow(QWidget):
         self.browseUpload = QtWidgets.QToolButton(self.Upload)
         self.browseUpload.setGeometry(QtCore.QRect(490, 30, 71, 19))
         self.browseUpload.setObjectName("browseUpload")
+        self.browseUpload.clicked.connect(self.getfileUpload)
         self.upload = QtWidgets.QPushButton(self.Upload)
         self.upload.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.upload.setObjectName("upload")
@@ -53,6 +54,7 @@ class Ui_MainWindow(QWidget):
         self.browseDownload = QtWidgets.QToolButton(self.Download)
         self.browseDownload.setGeometry(QtCore.QRect(490, 70, 71, 20))
         self.browseDownload.setObjectName("browseDownload")
+        self.browseDownload.clicked.connect(self.getfileDownload)
         self.download = QtWidgets.QPushButton(self.Download)
         self.download.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.download.setObjectName("download")
@@ -70,7 +72,13 @@ class Ui_MainWindow(QWidget):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+    def getfileUpload(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
+        self.uploadLocation.setText(fname)
 
+    def getfileDownload(self):
+        fname= QFileDialog.getExistingDirectory(self, 'Select save location')
+        self.downloadLocation.setText(str(fname))
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -88,10 +96,13 @@ class Ui_MainWindow(QWidget):
 
 
 
-app = QApplication(sys.argv)
-MainWindow = QMainWindow()
-ui = Ui_MainWindow()
-ui.setupUi(MainWindow)
-MainWindow.setWindowIcon(QtGui.QIcon('logo.ico'))
-MainWindow.show()
-sys.exit(app.exec_())
+def startup():
+    app = QApplication(sys.argv)
+    MainWindow = QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.setWindowIcon(QtGui.QIcon('logo.ico'))
+    MainWindow.show()
+    sys.exit(app.exec_())
+
+startup()
