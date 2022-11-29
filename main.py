@@ -1,3 +1,4 @@
+import shortuuid
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
 import sys
@@ -26,6 +27,7 @@ class Ui_MainWindow(QWidget):
         self.uploadcontID = QtWidgets.QLineEdit(self.Upload)
         self.uploadcontID.setGeometry(QtCore.QRect(120, 70, 441, 20))
         self.uploadcontID.setObjectName("uploadcontID")
+        self.uploadcontID.setReadOnly(True);
         self.uploadLocation = QtWidgets.QLineEdit(self.Upload)
         self.uploadLocation.setGeometry(QtCore.QRect(120, 30, 351, 20))
         self.uploadLocation.setObjectName("uploadLocation")
@@ -73,8 +75,10 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def getfileUpload(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
-        self.uploadLocation.setText(fname)
+        fpath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
+        self.uploadLocation.setText(fpath)
+        ID = shortuuid.random(40);
+        self.uploadcontID.setText(ID);
 
     def getfileDownload(self):
         fname= QFileDialog.getExistingDirectory(self, 'Select save location')
