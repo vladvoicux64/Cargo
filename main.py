@@ -99,7 +99,6 @@ class Ui_MainWindow(QWidget):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Download), _translate("MainWindow", "Download"))
 
 
-
 def startup():
     app = QApplication(sys.argv)
     MainWindow = QMainWindow()
@@ -108,5 +107,6 @@ def startup():
     MainWindow.setWindowIcon(QtGui.QIcon('logo.ico'))
     MainWindow.show()
     sys.exit(app.exec_())
+
 
 startup()
