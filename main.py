@@ -1,8 +1,9 @@
 import shortuuid
+import sys
+import os
+import pysftp
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
-import sys
-
 
 
 class Ui_MainWindow(QWidget):
@@ -75,14 +76,22 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def getfileUpload(self):
-        fpath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
-        self.uploadLocation.setText(fpath)
-        ID = shortuuid.random(40);
-        self.uploadcontID.setText(ID);
+        self.fpath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
+        self.uploadLocation.setText(self.fpath)
+        self.ID = shortuuid.random(40);
+        self.uploadcontID.setText(self.ID);
 
     def getfileDownload(self):
-        fname= QFileDialog.getExistingDirectory(self, 'Select save location')
-        self.downloadLocation.setText(str(fname))
+        self.fname= QFileDialog.getExistingDirectory(self, 'Select save location')
+        self.downloadLocation.setText(str(self.fname))
+
+
+    def download(self):
+        secret = open('secret.txt')
+        hostname = secret[0]
+        sftp_username = secret[1]
+        sftp_pw = secret[2]
+        #with pysftp.Connection(hostname, username=sftp_username, password=sftp_pw) as sftp:
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
