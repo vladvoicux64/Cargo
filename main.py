@@ -61,6 +61,7 @@ class Ui_MainWindow(QWidget):
         self.download = QtWidgets.QPushButton(self.Download)
         self.download.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.download.setObjectName("download")
+        self.download.clicked.connect(self.downloadfile)
         self.tabWidget.addTab(self.Download, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -82,16 +83,20 @@ class Ui_MainWindow(QWidget):
         self.uploadcontID.setText(self.ID);
 
     def getfileDownload(self):
-        self.fname= QFileDialog.getExistingDirectory(self, 'Select save location')
-        self.downloadLocation.setText(str(self.fname))
+        self.fdll = QFileDialog.getExistingDirectory(self, 'Select save location')
+        self.downloadLocation.setText(str(self.fdll))
 
-
-    def download(self):
-        secret = open('secret.txt')
-        hostname = secret[0]
-        sftp_username = secret[1]
-        sftp_pw = secret[2]
-        #with pysftp.Connection(hostname, username=sftp_username, password=sftp_pw) as sftp:
+    def downloadfile(self):
+        secret = open('secret.txt').readlines()
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+        hostname = secret[0][:len(secret[0])-1]
+        sftp_username = secret[1][:len(secret[1])-1]
+        sftp_pw = secret[2][:len(secret[2])]
+        with pysftp.Connection(hostname, username=sftp_username, password=sftp_pw, cnopts=cnopts) as sftp:
+            self.dlID = self.downloadcontID.text()
+            print('/stash/' + self.dlID, self.fdll + self.dlID)
+            sftp.get('/stash/' + self.dlID, self.fdll + self.dlID)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
