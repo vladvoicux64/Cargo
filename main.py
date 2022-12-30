@@ -1,6 +1,5 @@
 import shortuuid
 import sys
-import os
 import pysftp
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
@@ -39,6 +38,7 @@ class Ui_MainWindow(QWidget):
         self.upload = QtWidgets.QPushButton(self.Upload)
         self.upload.setGeometry(QtCore.QRect(30, 120, 531, 101))
         self.upload.setObjectName("upload")
+        self.upload.clicked.connect(self.uploadfile)
         self.tabWidget.addTab(self.Upload, "")
         self.Download = QtWidgets.QWidget()
         self.Download.setObjectName("Download")
@@ -77,26 +77,36 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def getfileUpload(self):
-        self.fpath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
-        self.uploadLocation.setText(self.fpath)
-        self.ID = shortuuid.random(40);
-        self.uploadcontID.setText(self.ID);
+        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
+        self.uploadLocation.setText(self.uppath)
+        self.upID = shortuuid.random(40);
+        self.uploadcontID.setText(self.upID);
 
     def getfileDownload(self):
-        self.fdll = QFileDialog.getExistingDirectory(self, 'Select save location')
-        self.downloadLocation.setText(str(self.fdll))
+        self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
+        self.downloadLocation.setText(str(self.dlpath))
 
-    def downloadfile(self):
+    def connect(self):
         secret = open('secret.txt').readlines()
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
-        hostname = secret[0][:len(secret[0])-1]
-        sftp_username = secret[1][:len(secret[1])-1]
+        hostname = secret[0][:len(secret[0]) - 1]
+        sftp_username = secret[1][:len(secret[1]) - 1]
         sftp_pw = secret[2][:len(secret[2])]
-        with pysftp.Connection(hostname, username=sftp_username, password=sftp_pw, cnopts=cnopts) as sftp:
-            self.dlID = self.downloadcontID.text()
-            print('/stash/' + self.dlID, self.fdll + self.dlID)
-            sftp.get('/stash/' + self.dlID, self.fdll + self.dlID)
+        self.sftp = pysftp.Connection(hostname, username=sftp_username, password=sftp_pw, cnopts=cnopts)
+        self.sftp.chdir('/stash')
+
+    def downloadfile(self):
+        self.connect()
+        self.dlID = self.downloadcontID.text()
+        self.sftp.get(self.dlID, self.dlpath + '/' + self.dlID)
+        self.sftp.close()
+
+    def uploadfile(self):
+        self.connect()
+        print(self.sftp.pwd)
+        self.sftp.put(self.uppath, './' + self.upID)
+        self.sftp.close()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
