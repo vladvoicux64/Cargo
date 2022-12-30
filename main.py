@@ -79,8 +79,9 @@ class Ui_MainWindow(QWidget):
     def getfileUpload(self):
         self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
         self.uploadLocation.setText(self.uppath)
-        self.upID = shortuuid.random(40);
-        self.uploadcontID.setText(self.upID);
+        _, extension = self.uppath.split('.')
+        self.upID = shortuuid.random(40) + '.' + extension
+        self.uploadcontID.setText(self.upID)
 
     def getfileDownload(self):
         self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
