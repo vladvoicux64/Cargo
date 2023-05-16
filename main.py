@@ -77,11 +77,12 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def getfileUpload(self):
-        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', 'c:\\', "All files (*)")
-        self.uploadLocation.setText(self.uppath)
-        _, extension = self.uppath.split('.')
-        self.upID = shortuuid.random(40) + '.' + extension
-        self.uploadcontID.setText(self.upID)
+        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', '', "All files (*)")
+        if(self.uppath != ''):
+            self.uploadLocation.setText(self.uppath)
+            _, extension = self.uppath.split('.')
+            self.upID = shortuuid.random(40) + '.' + extension
+            self.uploadcontID.setText(self.upID)
 
     def getfileDownload(self):
         self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
@@ -95,7 +96,6 @@ class Ui_MainWindow(QWidget):
         sftp_username = secret[1][:len(secret[1]) - 1]
         sftp_pw = secret[2][:len(secret[2])]
         self.sftp = pysftp.Connection(hostname, username=sftp_username, password=sftp_pw, cnopts=cnopts)
-        self.sftp.chdir('/stash')
 
     def downloadfile(self):
         try:
