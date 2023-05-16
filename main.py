@@ -98,16 +98,25 @@ class Ui_MainWindow(QWidget):
         self.sftp.chdir('/stash')
 
     def downloadfile(self):
-        self.connect()
+        try:
+            self.connect()
+        except:
+            self.statusbar.showMessage("Failed to download file. Connection was unsuccessful.", 5000)
+            return
         self.dlID = self.downloadcontID.text()
         self.sftp.get(self.dlID, self.dlpath + '/' + self.dlID)
         self.sftp.close()
+        self.statusbar.showMessage("File was downloaded succesfully.", 5000)
 
     def uploadfile(self):
-        self.connect()
-        print(self.sftp.pwd)
+        try:
+            self.connect()
+        except:
+            self.statusbar.showMessage("Failed to upload file. Connection was unsuccessful.", 5000)
+            return
         self.sftp.put(self.uppath, './' + self.upID)
         self.sftp.close()
+        self.statusbar.showMessage("File was uploaded succesfully.", 5000)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
