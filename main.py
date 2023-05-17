@@ -109,9 +109,9 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def genID(self):
-        if (self.uppath != '' and os.path.exists(self.uppath)):
+        if self.uppath != '' and os.path.exists(self.uppath):
             self.uploadLocation.setText(self.uppath)
-            _, extension = self.uppath.split('.')
+            _, extension = self.uppath.rsplit('.', 1)
             self.upID = shortuuid.random(40) + '.' + extension
             self.uploadcontID.setText(self.upID)
 
@@ -165,7 +165,7 @@ class Ui_MainWindow(QWidget):
         self.dlID = self.downloadcontID.text()
         self.dlfilePath = self.dlpath + '/' + self.dlID
         def dl():
-            if not os.path.exists(self.dlfilePath): raise Exception
+            if (not os.path.exists(self.dlpath)) or self.dlID == '': raise Exception
             self.sftp.get(self.dlID, self.dlfilePath)
             self.statusbar.showMessage("File was downloaded successfully.", 5000)
 
@@ -195,7 +195,7 @@ class Ui_MainWindow(QWidget):
                 self.connectSFTP()
                 up()
             except:
-                self.statusbar.showMessage("Upload failed. Either check that the file exists and has a single extension or the connection parameters.", 5000)
+                self.statusbar.showMessage("Upload failed. Either check that the file exists or the connection parameters.", 5000)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
