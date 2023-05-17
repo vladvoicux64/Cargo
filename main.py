@@ -165,8 +165,9 @@ class Ui_MainWindow(QWidget):
         self.dlID = self.downloadcontID.text()
         self.dlfilePath = self.dlpath + '/' + self.dlID
         def dl():
+            if not os.path.exists(self.dlfilePath): raise Exception
             self.sftp.get(self.dlID, self.dlfilePath)
-            self.statusbar.showMessage("File was downloaded succesfully.", 5000)
+            self.statusbar.showMessage("File was downloaded successfully.", 5000)
 
         try:
             dl()
@@ -185,7 +186,7 @@ class Ui_MainWindow(QWidget):
         def up():
             self.genID()
             self.sftp.put(self.uppath, './' + self.upID)
-            self.statusbar.showMessage("File was uploaded succesfully.", 5000)
+            self.statusbar.showMessage("File was uploaded successfully.", 5000)
 
         try:
             up()
