@@ -108,13 +108,16 @@ class Ui_MainWindow(QWidget):
         self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def getfileUpload(self):
-        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', '', "All files (*)")
-        if(self.uppath != ''):
+    def genID(self):
+        if (self.uppath != '' and os.path.exists(self.uppath)):
             self.uploadLocation.setText(self.uppath)
             _, extension = self.uppath.split('.')
             self.upID = shortuuid.random(40) + '.' + extension
             self.uploadcontID.setText(self.upID)
+
+    def getfileUpload(self):
+        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', '', "All files (*)")
+        self.uploadLocation.setText(self.uppath)
 
     def getfileDownload(self):
         self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
@@ -158,10 +161,10 @@ class Ui_MainWindow(QWidget):
             self.statusbar.showMessage("Connection unsuccessful. Check connection parameters and try again.", 5000)
 
     def downloadfile(self):
+        self.dlpath = self.downloadLocation.text()
         self.dlID = self.downloadcontID.text()
         self.dlfilePath = self.dlpath + '/' + self.dlID
         def dl():
-            if not os.path.exists(self.dlfilePath): raise Exception
             self.sftp.get(self.dlID, self.dlfilePath)
             self.statusbar.showMessage("File was downloaded succesfully.", 5000)
 
@@ -178,7 +181,9 @@ class Ui_MainWindow(QWidget):
 
 
     def uploadfile(self):
+        self.uppath = self.uploadLocation.text()
         def up():
+            self.genID()
             self.sftp.put(self.uppath, './' + self.upID)
             self.statusbar.showMessage("File was uploaded succesfully.", 5000)
 
