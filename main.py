@@ -173,7 +173,7 @@ class Ui_MainWindow(QWidget):
             except:
                 if os.path.exists(self.dlfilePath):
                     os.remove(self.dlfilePath)
-                self.statusbar.showMessage("Download failed. Either check that the file exists and has a single extension or the connection parameters.", 5000)
+                self.statusbar.showMessage("Download failed. Either check that the file exists or the connection parameters.", 5000)
 
 
     def uploadfile(self):
@@ -188,7 +188,7 @@ class Ui_MainWindow(QWidget):
                 self.connectSFTP()
                 up()
             except:
-                self.statusbar.showMessage("Upload failed. Either check that the file exists or the connection parameters.", 5000)
+                self.statusbar.showMessage("Upload failed. Either check that the file exists and has a single extension or the connection parameters.", 5000)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
