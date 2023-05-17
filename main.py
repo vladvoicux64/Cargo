@@ -6,6 +6,11 @@ import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
 
+if(os.name == 'nt'):
+    import ctypes
+    myappid = u'Cargo'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
 class Ui_MainWindow(QWidget):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -207,11 +212,11 @@ class Ui_MainWindow(QWidget):
 
 def startup():
     app = QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('logo.ico'))
     MainWindow = QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     ui.init_userdata()
-    MainWindow.setWindowIcon(QtGui.QIcon('logo.ico'))
     MainWindow.show()
     sys.exit(app.exec_())
 
