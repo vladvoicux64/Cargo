@@ -1,4 +1,5 @@
 import shortuuid
+import asyncio
 import sys
 import json
 import pysftp
@@ -6,10 +7,16 @@ import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
 
+
 if(os.name == 'nt'):
     import ctypes
     myappid = u'Cargo'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+
+error_download = 'Download failed. Either check that the file and location exist or the connection parameters.'
+error_upload = 'Upload failed. Either check that the file exists or the connection parameters.'
+
 
 class Ui_MainWindow(QWidget):
     def setupUi(self, MainWindow):
@@ -160,42 +167,48 @@ class Ui_MainWindow(QWidget):
         except:
             self.statusbar.showMessage("Connection unsuccessful. Check connection parameters and try again.", 5000)
 
+    def deco_builder(self, errmsg, additional):
+        def retry_w_connection(func):
+            def wrapper():
+                try:
+                    func()
+                except:
+                    try:
+                        self.connectSFTP()
+                        func()
+                    except:
+                        if additional != None: additional()
+                        self.statusbar.showMessage(errmsg, 5000)
+            return wrapper
+        return retry_w_connection
+
+    def clean_up(self):
+        if os.path.exists(self.dlfilePath) and self.dlID != '':
+            os.remove(self.dlfilePath)
+
     def downloadfile(self):
         self.dlpath = self.downloadLocation.text()
         self.dlID = self.downloadcontID.text()
         self.dlfilePath = self.dlpath + '/' + self.dlID
+
+        @self.deco_builder(error_download, self.clean_up)
         def dl():
             if (not os.path.exists(self.dlpath)) or self.dlID == '': raise Exception
             self.sftp.get(self.dlID, self.dlfilePath)
             self.statusbar.showMessage("File was downloaded successfully.", 5000)
 
-        try:
-            dl()
-        except:
-            try:
-                self.connectSFTP()
-                dl()
-            except:
-                if os.path.exists(self.dlfilePath):
-                    os.remove(self.dlfilePath)
-                self.statusbar.showMessage("Download failed. Either check that the file and location exist or the connection parameters.", 5000)
-
+        dl()
 
     def uploadfile(self):
         self.uppath = self.uploadLocation.text()
+
+        @self.deco_builder(error_upload, None)
         def up():
             self.genID()
             self.sftp.put(self.uppath, './' + self.upID)
             self.statusbar.showMessage("File was uploaded successfully.", 5000)
 
-        try:
-            up()
-        except:
-            try:
-                self.connectSFTP()
-                up()
-            except:
-                self.statusbar.showMessage("Upload failed. Either check that the file exists or the connection parameters.", 5000)
+        up()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
