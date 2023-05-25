@@ -3,15 +3,16 @@ import sys
 import json
 import pysftp
 import os
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtTest
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtTest import QSignalSpy
 
-if(os.name == 'nt'):
+if os.name == 'nt':
     import ctypes
+
     myappid = u'Cargo'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-
 
 error_download = 'Download failed. Either check that the file and location exist or the connection parameters.'
 error_upload = 'Upload failed. Either check that the file exists or the connection parameters.'
@@ -21,24 +22,78 @@ class Worker(QObject):
     status_update = pyqtSignal(str, int)
 
     connectionattempt_finished = pyqtSignal()
-    connectionattempt_retry = pyqtSignal()
-    connection_successful = pyqtSignal(pysftp.Connection)
+    request_reconnect = pyqtSignal()
+
+    uploadID = pyqtSignal(str)
+    uploadattempt_finished = pyqtSignal()
+
+    downloadattempt_finished = pyqtSignal()
 
     def connectSFTP(self, userdata, usermade):
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
 
         try:
-            self.connectionattempt_retry.emit()
-            sftp = pysftp.Connection(userdata["server"], username = userdata["username"], password = userdata["password"], cnopts=cnopts)
+            if hasattr(self, 'sftp'):
+                self.sftp.close()
+            self.sftp = pysftp.Connection(userdata["server"], username=userdata["username"],
+                                          password=userdata["password"], cnopts=cnopts)
             if usermade:
                 self.status_update.emit("Connection successful.", 5000)
-            self.connection_successful.emit(sftp)
         except:
             if usermade:
                 self.status_update.emit("Connection unsuccessful. Check connection parameters and try again.", 5000)
 
         self.connectionattempt_finished.emit()
+
+    def deco_builder(self, errmsg, additional):
+        def retry_w_connection(func):
+            def wrapper(args):
+                try:
+                    func(args)
+                except:
+                    try:
+                        spy = QSignalSpy(self.connectionattempt_finished)
+                        self.request_reconnect.emit()
+                        spy.wait(1000)
+                        func(args)
+                    except:
+                        if additional is not None: additional(args)
+                        self.status_update.emit(errmsg, 5000)
+
+            return wrapper
+
+        return retry_w_connection
+
+    def clean_up(self, args):
+        if os.path.exists(args['dlfilePath']) and args['dlID'] != '':
+            os.remove(args['dlfilePath'])
+
+    def genID(self, uppath):
+        _, extension = uppath.rsplit('.', 1)
+        self.upID = shortuuid.random(40) + '.' + extension
+
+    def downloadfile(self, args):
+        @self.deco_builder(error_download, self.clean_up)
+        def dl(dlargs):
+            if (not os.path.exists(dlargs['dlpath'])) or dlargs['dlID'] == '': raise Exception
+            self.sftp.get(dlargs['dlID'], dlargs['dlfilePath'])
+            self.status_update.emit("File was downloaded successfully.", 5000)
+
+        dl(args)
+        self.downloadattempt_finished.emit()
+
+    def uploadfile(self, args):
+        @self.deco_builder(error_upload, lambda args: self.uploadID.emit(''))
+        def up(upargs):
+            if not (upargs['uppath'] != '' and os.path.exists(upargs['uppath'])): raise Exception
+            self.genID(upargs['uppath'])
+            self.sftp.put(upargs['uppath'], './' + self.upID)
+            self.uploadID.emit(self.upID)
+            self.status_update.emit("File was uploaded successfully.", 5000)
+
+        up(args)
+        self.uploadattempt_finished.emit()
 
 
 class Ui_MainWindow(QWidget):
@@ -142,33 +197,31 @@ class Ui_MainWindow(QWidget):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     startconnection = pyqtSignal(object, bool)
+    startupload = pyqtSignal(dict)
+    startdownload = pyqtSignal(dict)
 
     def init_worker(self):
         self.thread = QThread()
         self.worker = Worker()
         self.worker.moveToThread(self.thread)
 
+        self.worker.status_update.connect(self.display_msg)
 
         self.startconnection.connect(self.worker.connectSFTP)
-        self.worker.status_update.connect(self.display_msg)
-        self.worker.connectionattempt_retry.connect(self.close_connection)
         self.worker.connectionattempt_finished.connect(lambda: self.connectButton.setEnabled(True))
-        self.worker.connection_successful.connect(self.establish_connection)
+        self.worker.request_reconnect.connect(lambda: self.connectSFTP((False)))
 
+        self.startupload.connect(self.worker.uploadfile)
+        self.worker.uploadID.connect(lambda ID: self.fetchID(ID))
+        self.worker.uploadattempt_finished.connect(lambda: self.upload.setEnabled(True))
+
+        self.startdownload.connect(self.worker.downloadfile)
+        self.worker.downloadattempt_finished.connect(lambda: self.download.setEnabled(True))
 
         self.thread.start()
 
     def display_msg(self, msg, time):
         self.statusbar.showMessage(msg, time)
-
-    def establish_connection(self, connection):
-        self.sftp = connection
-    def close_connection(self):
-        if hasattr(self, "sftp"):
-            self.sftp.close()
-    def connectSFTP(self, usermade):
-        self.connectButton.setEnabled(False)
-        self.startconnection.emit(self.userdata, usermade)
 
     def display_userdata(self):
         self.serverAdress.setText(self.userdata["server"])
@@ -182,9 +235,9 @@ class Ui_MainWindow(QWidget):
             self.display_userdata()
         except:
             self.userdata = {
-                "server" : "ip:port",
-                "username" : "username",
-                "password" : "password"
+                "server": "ip:port",
+                "username": "username",
+                "password": "password"
             }
             self.display_userdata()
             self.statusbar.showMessage("No secret.json file found. Using default connection parameters.", 5000)
@@ -199,63 +252,29 @@ class Ui_MainWindow(QWidget):
         with open("secret.json", "w+") as secret_file:
             json.dump(self.userdata, secret_file)
 
-    def genID(self):
-        if self.uppath != '' and os.path.exists(self.uppath):
-            self.uploadLocation.setText(self.uppath)
-            _, extension = self.uppath.rsplit('.', 1)
-            self.upID = shortuuid.random(40) + '.' + extension
-            self.uploadcontID.setText(self.upID)
+    def connectSFTP(self, usermade):
+        self.connectButton.setEnabled(False)
+        self.startconnection.emit(self.userdata, usermade)
 
     def getfileUpload(self):
-        self.uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', '', "All files (*)")
-        self.uploadLocation.setText(self.uppath)
+        uppath, _ = QFileDialog.getOpenFileName(self, 'Select file to upload', '', "All files (*)")
+        self.uploadLocation.setText(uppath)
 
     def getfileDownload(self):
-        self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
-        self.downloadLocation.setText(str(self.dlpath))
+        dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
+        self.downloadLocation.setText(str(dlpath))
 
-    def deco_builder(self, errmsg, additional):
-        def retry_w_connection(func):
-            def wrapper():
-                try:
-                    func()
-                except:
-                    try:
-                        self.connectSFTP(False)
-                        func()
-                    except:
-                        if additional != None: additional()
-                        self.statusbar.showMessage(errmsg, 5000)
-            return wrapper
-        return retry_w_connection
-
-    def clean_up(self):
-        if os.path.exists(self.dlfilePath) and self.dlID != '':
-            os.remove(self.dlfilePath)
-
-    def downloadfile(self):
-        self.dlpath = self.downloadLocation.text()
-        self.dlID = self.downloadcontID.text()
-        self.dlfilePath = self.dlpath + '/' + self.dlID
-
-        @self.deco_builder(error_download, self.clean_up)
-        def dl():
-            if (not os.path.exists(self.dlpath)) or self.dlID == '': raise Exception
-            self.sftp.get(self.dlID, self.dlfilePath)
-            self.statusbar.showMessage("File was downloaded successfully.", 5000)
-
-        dl()
+    def fetchID(self, ID):
+        self.uploadcontID.setText(ID)
 
     def uploadfile(self):
-        self.uppath = self.uploadLocation.text()
+        self.upload.setEnabled(False)
+        self.startupload.emit({'uppath': self.uploadLocation.text()})
 
-        @self.deco_builder(error_upload, None)
-        def up():
-            self.genID()
-            self.sftp.put(self.uppath, './' + self.upID)
-            self.statusbar.showMessage("File was uploaded successfully.", 5000)
-
-        up()
+    def downloadfile(self):
+        self.download.setEnabled(False)
+        self.startdownload.emit({'dlpath': self.downloadLocation.text(), 'dlID': self.downloadcontID.text(),
+                                 'dlfilePath': self.downloadLocation.text() + '/' + self.downloadcontID.text()})
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
