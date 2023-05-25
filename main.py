@@ -1,12 +1,11 @@
 import shortuuid
-import asyncio
 import sys
 import json
 import pysftp
 import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget
-
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 if(os.name == 'nt'):
     import ctypes
@@ -16,6 +15,30 @@ if(os.name == 'nt'):
 
 error_download = 'Download failed. Either check that the file and location exist or the connection parameters.'
 error_upload = 'Upload failed. Either check that the file exists or the connection parameters.'
+
+
+class Worker(QObject):
+    status_update = pyqtSignal(str, int)
+
+    connectionattempt_finished = pyqtSignal()
+    connectionattempt_retry = pyqtSignal()
+    connection_successful = pyqtSignal(pysftp.Connection)
+
+    def connectSFTP(self, userdata, usermade):
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+
+        try:
+            self.connectionattempt_retry.emit()
+            sftp = pysftp.Connection(userdata["server"], username = userdata["username"], password = userdata["password"], cnopts=cnopts)
+            if usermade:
+                self.status_update.emit("Connection successful.", 5000)
+            self.connection_successful.emit(sftp)
+        except:
+            if usermade:
+                self.status_update.emit("Connection unsuccessful. Check connection parameters and try again.", 5000)
+
+        self.connectionattempt_finished.emit()
 
 
 class Ui_MainWindow(QWidget):
@@ -40,7 +63,7 @@ class Ui_MainWindow(QWidget):
         self.uploadcontID = QtWidgets.QLineEdit(self.Upload)
         self.uploadcontID.setGeometry(QtCore.QRect(120, 70, 441, 20))
         self.uploadcontID.setObjectName("uploadcontID")
-        self.uploadcontID.setReadOnly(True);
+        self.uploadcontID.setReadOnly(True)
         self.uploadLocation = QtWidgets.QLineEdit(self.Upload)
         self.uploadLocation.setGeometry(QtCore.QRect(120, 30, 351, 20))
         self.uploadLocation.setObjectName("uploadLocation")
@@ -90,17 +113,20 @@ class Ui_MainWindow(QWidget):
         self.serverAdress = QtWidgets.QLineEdit(self.Connect)
         self.serverAdress.setGeometry(QtCore.QRect(160, 30, 401, 20))
         self.serverAdress.setObjectName("serverAdress")
+        self.serverAdress.textEdited.connect(self.save_userdata)
         self.username = QtWidgets.QLineEdit(self.Connect)
         self.username.setGeometry(QtCore.QRect(120, 80, 441, 20))
         self.username.setObjectName("username")
+        self.username.textEdited.connect(self.save_userdata)
         self.passwd = QtWidgets.QLineEdit(self.Connect)
         self.passwd.setGeometry(QtCore.QRect(120, 130, 441, 20))
         self.passwd.setObjectName("passwd")
         self.passwd.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.passwd.textEdited.connect(self.save_userdata)
         self.connectButton = QtWidgets.QPushButton(self.Connect)
         self.connectButton.setGeometry(QtCore.QRect(30, 180, 531, 31))
         self.connectButton.setObjectName("connectButton")
-        self.connectButton.clicked.connect(self.connectSFTP)
+        self.connectButton.clicked.connect(lambda: self.connectSFTP(True))
         self.tabWidget.addTab(self.Connect, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -114,6 +140,64 @@ class Ui_MainWindow(QWidget):
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    startconnection = pyqtSignal(object, bool)
+
+    def init_worker(self):
+        self.thread = QThread()
+        self.worker = Worker()
+        self.worker.moveToThread(self.thread)
+
+
+        self.startconnection.connect(self.worker.connectSFTP)
+        self.worker.status_update.connect(self.display_msg)
+        self.worker.connectionattempt_retry.connect(self.close_connection)
+        self.worker.connectionattempt_finished.connect(lambda: self.connectButton.setEnabled(True))
+        self.worker.connection_successful.connect(self.establish_connection)
+
+
+        self.thread.start()
+
+    def display_msg(self, msg, time):
+        self.statusbar.showMessage(msg, time)
+
+    def establish_connection(self, connection):
+        self.sftp = connection
+    def close_connection(self):
+        if hasattr(self, "sftp"):
+            self.sftp.close()
+    def connectSFTP(self, usermade):
+        self.connectButton.setEnabled(False)
+        self.startconnection.emit(self.userdata, usermade)
+
+    def display_userdata(self):
+        self.serverAdress.setText(self.userdata["server"])
+        self.username.setText(self.userdata["username"])
+        self.passwd.setText(self.userdata["password"])
+
+    def init_userdata(self):
+        try:
+            with open("secret.json", "r") as secret_file:
+                self.userdata = json.load(secret_file)
+            self.display_userdata()
+        except:
+            self.userdata = {
+                "server" : "ip:port",
+                "username" : "username",
+                "password" : "password"
+            }
+            self.display_userdata()
+            self.statusbar.showMessage("No secret.json file found. Using default connection parameters.", 5000)
+
+    def save_userdata(self):
+        self.userdata = {
+            "server": self.serverAdress.text(),
+            "username": self.username.text(),
+            "password": self.passwd.text()
+        }
+
+        with open("secret.json", "w+") as secret_file:
+            json.dump(self.userdata, secret_file)
 
     def genID(self):
         if self.uppath != '' and os.path.exists(self.uppath):
@@ -130,43 +214,6 @@ class Ui_MainWindow(QWidget):
         self.dlpath = QFileDialog.getExistingDirectory(self, 'Select save location')
         self.downloadLocation.setText(str(self.dlpath))
 
-    def display_userdata(self):
-        self.serverAdress.setText(self.userdata["server"])
-        self.username.setText(self.userdata["user"])
-        self.passwd.setText(self.userdata["pass"])
-    def init_userdata(self):
-        try:
-            with open("secret.json", "r") as secret_file:
-                self.userdata = json.load(secret_file)
-            self.display_userdata()
-        except:
-            self.userdata = {
-                "server" : "ip:port",
-                "user" : "username",
-                "pass" : "password"
-            }
-            self.display_userdata()
-            self.statusbar.showMessage("No secret.json file found. Using default connection parameters.", 5000)
-
-    def connectSFTP(self):
-        self.userdata["server"] = self.serverAdress.text()
-        self.userdata["user"] = self.username.text()
-        self.userdata["pass"] = self.passwd.text()
-
-        with open("secret.json", "w+") as secret_file:
-            json.dump(self.userdata, secret_file)
-
-        cnopts = pysftp.CnOpts()
-        cnopts.hostkeys = None
-
-        try:
-            if(hasattr(self, "sftp")):
-                self.sftp.close()
-            self.sftp = pysftp.Connection(self.userdata["server"], username=self.userdata["user"], password= self.userdata["pass"], cnopts=cnopts)
-            self.statusbar.showMessage("Connection successful.", 5000)
-        except:
-            self.statusbar.showMessage("Connection unsuccessful. Check connection parameters and try again.", 5000)
-
     def deco_builder(self, errmsg, additional):
         def retry_w_connection(func):
             def wrapper():
@@ -174,7 +221,7 @@ class Ui_MainWindow(QWidget):
                     func()
                 except:
                     try:
-                        self.connectSFTP()
+                        self.connectSFTP(False)
                         func()
                     except:
                         if additional != None: additional()
@@ -237,6 +284,7 @@ def startup():
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     ui.init_userdata()
+    ui.init_worker()
     MainWindow.show()
     sys.exit(app.exec_())
 
