@@ -3,7 +3,7 @@ Cargo is a tool that allows you to send files via "containers", an unique ID tha
 # Installation & Setup
 Copy the contents of the repository and install the libs contained in requirements.txt. Enter your credentials on the connect page, they will auto-magically be saved.
 # Connecting to a server
-This application requires an SFTP server to work. AFter getting the credentials of your server, input them in their respective fields in the *Connect* tab and click the connect button. You should get a message confirming the connection:
+This application requires an SFTP server to work. After getting the credentials of your server, input them in their respective fields in the *Connect* tab and click the connect button. You should get a message confirming the connection:
 
 <img width="605" alt="image" src="https://github.com/vladvoicux64/Cargo/assets/77429938/da116ef4-69b5-49e4-a764-87f08b62042a">
 
